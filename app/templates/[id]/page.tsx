@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from '@/lib/supabaseServer'
 import Link from 'next/link'
+import TemplateView from '@/components/TemplateView'
 
 export default async function TemplateDetailPage({
   params,
@@ -44,66 +45,12 @@ export default async function TemplateDetailPage({
       <h1>{template.name}</h1>
       <p style={{ color: '#666' }}>Source: {template.source}</p>
 
-      {issues && issues.length > 0 && (
-        <details style={{ background: '#fff3cd', padding: 16, marginBottom: 24, borderRadius: 8 }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-            ⚠ {issues.length} item{issues.length > 1 ? 's' : ''} need review from import
-          </summary>
-          <ul>
-            {issues.map((issue) => (
-              <li key={issue.id} style={{ marginTop: 8 }}>
-                <strong>{issue.row_reference}</strong> — {issue.issue_type}: {issue.description}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-
-      {(sections ?? []).map((section) => {
-        const items = (allItems ?? []).filter((i) => i.section_id === section.id)
-        return (
-          <div key={section.id} style={{ marginBottom: 32 }}>
-            <h2>{section.name}</h2>
-            {items.map((item) => {
-              const comments = (allComments ?? []).filter((c) => c.item_id === item.id)
-              return (
-                <div key={item.id} style={{ marginLeft: 16, marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16 }}>{item.name}</h3>
-                  <ul>
-                    {comments.map((c) => (
-                      <li key={c.id} style={{ marginBottom: 6 }}>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: '2px 6px',
-                            borderRadius: 4,
-                            marginRight: 8,
-                            background:
-                              c.comment_type === 'defect'
-                                ? '#f8d7da'
-                                : c.comment_type === 'limit'
-                                ? '#fff3cd'
-                                : '#d1ecf1',
-                          }}
-                        >
-                          {c.comment_type}
-                        </span>
-                        <strong>{c.name}</strong>
-                        {c.text && (
-  <div
-    style={{ color: '#444', marginTop: 2 }}
-    dangerouslySetInnerHTML={{ __html: c.text }}
-  />
-)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            })}
-          </div>
-        )
-      })}
+      <TemplateView
+        sections={sections ?? []}
+        items={allItems ?? []}
+        comments={allComments ?? []}
+        issues={issues ?? []}
+      />
     </div>
   )
 }
