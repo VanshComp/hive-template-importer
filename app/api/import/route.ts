@@ -1,3 +1,4 @@
+import { getSupabaseServerClient } from '@/lib/supabaseServer'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 
@@ -202,14 +203,98 @@ export async function POST(req: NextRequest) {
     0
   )
 
+    const supabase = getSupabaseServerClient()
+
+  // 1. Create the template
+  const templateName = file.name.replace(/\.(xls|xlsx)$/i, '')
+  const { data: template, error: templateError } = await supabase
+    .from('templates')
+    .insert({ name: templateName, source: 'spectora_import' })
+    .select()
+    .single()
+
+  if (templateError || !template) {
+    return NextResponse.json(
+      { error: 'Failed to create template record.', details: templateError?.message },
+      { status: 500 }
+    )
+  }
+
+  // 2. Insert sections, items, comments — in order, so we can link foreign keys
+  for (const section of result) {
+    const { data: sectionRow, error: sectionError } = await supabase
+      .from('sections')
+      .insert({ template_id: template.id, name: section.name, order_index: section.orderIndex })
+      .select()
+      .single()
+
+    if (sectionError || !sectionRow) {
+      return NextResponse.json(
+        { error: `Failed to insert section "${section.name}"`, details: sectionError?.message },
+        { status: 500 }
+      )
+    }
+
+    for (const item of section.items) {
+      const { data: itemRow, error: itemError } = await supabase
+        .from('items')
+        .insert({ section_id: sectionRow.id, name: item.name, order_index: item.orderIndex })
+        .select()
+        .single()
+
+      if (itemError || !itemRow) {
+        return NextResponse.json(
+          { error: `Failed to insert item "${item.name}"`, details: itemError?.message },
+          { status: 500 }
+        )
+      }
+
+      if (item.comments.length > 0) {
+        const commentRows = item.comments.map((c) => ({
+          item_id: itemRow.id,
+          name: c.name,
+          text: c.text,
+          comment_type: c.commentType,
+          category: c.category,
+          order_index: c.orderIndex,
+        }))
+        const { error: commentsError } = await supabase.from('comments').insert(commentRows)
+        if (commentsError) {
+          return NextResponse.json(
+            { error: `Failed to insert comments for item "${item.name}"`, details: commentsError.message },
+            { status: 500 }
+          )
+        }
+      }
+    }
+  }
+
+  // 3. Insert import issues, linked to the template
+  if (issues.length > 0) {
+    const issueRows = issues.map((i) => ({
+      template_id: template.id,
+      row_reference: i.rowReference,
+      issue_type: i.issueType,
+      description: i.description,
+      raw_content: i.rawContent,
+    }))
+    const { error: issuesError } = await supabase.from('import_issues').insert(issueRows)
+    if (issuesError) {
+      return NextResponse.json(
+        { error: 'Failed to insert import issues', details: issuesError.message },
+        { status: 500 }
+      )
+    }
+  }
+
   return NextResponse.json({
+    templateId: template.id,
+    templateName: template.name,
     summary: {
       sectionsFound: result.length,
       itemsFound: result.reduce((sum, s) => sum + s.items.length, 0),
       commentsFound: totalComments,
       issuesFound: issues.length,
     },
-    sections: result,
-    issues,
   })
 }
