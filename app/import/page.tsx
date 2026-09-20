@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 type ImportIssue = { rowReference: string; issueType: string; description: string }
 type ImportResult = { templateId: string; templateName: string; summary: { sectionsFound: number; itemsFound: number; commentsFound: number; issuesFound: number }; issues?: ImportIssue[] }
@@ -11,6 +11,21 @@ export default function ImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function selectFile(nextFile: File | undefined) {
+    if (!nextFile) return
+    const isSpreadsheet = /\.(xls|xlsx)$/i.test(nextFile.name)
+    if (!isSpreadsheet) {
+      setFile(null)
+      setErrorMsg('Please choose an XLS or XLSX spreadsheet export.')
+      return
+    }
+    setFile(nextFile)
+    setErrorMsg(null)
+    setResult(null)
+  }
 
   async function handleUpload() {
     if (!file) return
@@ -35,11 +50,48 @@ export default function ImportPage() {
       <div className="import-layout">
         <div>
           <section className="upload-panel panel">
-            <div className="upload-drop">
+            <div
+              className={`upload-drop${isDragging ? ' is-dragging' : ''}`}
+              role="button"
+              tabIndex={0}
+              aria-label="Choose or drop a spreadsheet file"
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
+              onDragEnter={(event) => {
+                event.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragOver={(event) => {
+                event.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault()
+                setIsDragging(false)
+              }}
+              onDrop={(event) => {
+                event.preventDefault()
+                setIsDragging(false)
+                selectFile(event.dataTransfer.files[0])
+              }}
+            >
               <div className="upload-icon">↥</div>
-              <strong>Choose your spreadsheet</strong>
+              <strong>{isDragging ? 'Drop your spreadsheet here' : 'Choose or drop your spreadsheet'}</strong>
               <span className="muted" style={{ fontSize: 12, marginTop: 7 }}>XLS or XLSX · HTML Text export</span>
-              <input className="file-input" type="file" accept=".xls,.xlsx" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setErrorMsg(null); setResult(null) }} />
+              <span className="upload-hint">Click anywhere here to browse files</span>
+              <input
+                ref={fileInputRef}
+                className="file-input"
+                type="file"
+                accept=".xls,.xlsx"
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => selectFile(event.target.files?.[0])}
+              />
             </div>
             <div className="upload-footer"><span className="file-name">{file ? file.name : 'No file selected yet'}</span><button className="button" onClick={handleUpload} disabled={!file || loading}>{loading ? 'Importing...' : 'Import file  →'}</button></div>
           </section>
