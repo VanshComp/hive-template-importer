@@ -77,10 +77,11 @@ export default function TemplateView({
           <div key={section.id} style={{ marginBottom: 32 }}>
             <h2>
               <EditableField
-                value={section.name}
-                onSave={(v) => updateSection(section.id, v)}
-                label="section name"
-              />
+  value={section.name}
+  onSave={(v) => updateSection(section.id, v)}
+  label="section name"
+  required
+/>
             </h2>
             {sectionItems.map((item) => {
               const itemComments = comments.filter((c) => c.item_id === item.id)
@@ -88,10 +89,11 @@ export default function TemplateView({
                 <div key={item.id} style={{ marginLeft: 16, marginBottom: 16 }}>
                   <h3 style={{ fontSize: 16 }}>
                     <EditableField
-                      value={item.name}
-                      onSave={(v) => updateItem(item.id, v)}
-                      label="item name"
-                    />
+  value={item.name}
+  onSave={(v) => updateItem(item.id, v)}
+  label="item name"
+  required
+/>
                   </h3>
                   <ul>
                     {itemComments.map((c) => (

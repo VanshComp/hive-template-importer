@@ -6,18 +6,27 @@ export default function EditableField({
   onSave,
   multiline = false,
   label,
+  required = false,
 }: {
   value: string
   onSave: (newValue: string) => Promise<void>
   multiline?: boolean
   label?: string
+  required?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   async function handleSave() {
+    if (required && draft.trim() === '') {
+      setValidationError(`${label ?? 'This field'} can't be empty.`)
+      return
+    }
+    setValidationError(null)
+
     if (draft === value) {
       setEditing(false)
       return
@@ -29,7 +38,7 @@ export default function EditableField({
       setTimeout(() => setSavedFlash(false), 1200)
     } catch (e) {
       alert('Failed to save. Please try again.')
-      setDraft(value) // revert on failure
+      setDraft(value)
     } finally {
       setSaving(false)
       setEditing(false)
@@ -61,19 +70,32 @@ export default function EditableField({
       <Field
         autoFocus
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          if (validationError) setValidationError(null)
+        }}
         onBlur={handleSave}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !multiline) handleSave()
           if (e.key === 'Escape') {
             setDraft(value)
+            setValidationError(null)
             setEditing(false)
           }
         }}
         disabled={saving}
         rows={multiline ? 4 : undefined}
-        style={{ width: multiline ? 500 : 300, padding: 4, fontFamily: 'inherit', fontSize: 'inherit' }}
+        style={{
+          width: multiline ? 500 : 300,
+          padding: 4,
+          fontFamily: 'inherit',
+          fontSize: 'inherit',
+          border: validationError ? '1px solid #dc3545' : undefined,
+        }}
       />
+      {validationError && (
+        <div style={{ color: '#dc3545', fontSize: 12, marginTop: 2 }}>{validationError}</div>
+      )}
     </span>
   )
 }
