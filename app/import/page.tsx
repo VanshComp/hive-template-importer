@@ -1,23 +1,10 @@
 'use client'
+
+import Link from 'next/link'
 import { useState } from 'react'
 
-type ImportIssue = {
-  rowReference: string
-  issueType: string
-  description: string
-}
-
-type ImportResult = {
-  templateId: string
-  templateName: string
-  summary: {
-    sectionsFound: number
-    itemsFound: number
-    commentsFound: number
-    issuesFound: number
-  }
-  issues?: ImportIssue[]
-}
+type ImportIssue = { rowReference: string; issueType: string; description: string }
+type ImportResult = { templateId: string; templateName: string; summary: { sectionsFound: number; itemsFound: number; commentsFound: number; issuesFound: number }; issues?: ImportIssue[] }
 
 export default function ImportPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -27,122 +14,45 @@ export default function ImportPage() {
 
   async function handleUpload() {
     if (!file) return
-    setLoading(true)
-    setResult(null)
-    setErrorMsg(null)
-
-    const formData = new FormData()
-    formData.append('file', file)
-
+    setLoading(true); setResult(null); setErrorMsg(null)
+    const formData = new FormData(); formData.append('file', file)
     try {
       const res = await fetch('/api/import', { method: 'POST', body: formData })
       const data = await res.json()
-
-      if (!res.ok) {
-        setErrorMsg(data.error ?? 'Something went wrong during import.')
-      } else {
-        setResult(data)
-      }
-    } catch (e) {
+      if (!res.ok) setErrorMsg(data.error ?? 'Something went wrong during import.')
+      else setResult(data)
+    } catch {
       setErrorMsg('Could not reach the server. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
-    <div style={{ padding: 40, maxWidth: 640 }}>
-      <h1>Import Spectora Template</h1>
-      <p style={{ color: '#666', marginTop: -8 }}>
-        Upload a Spectora HTML-text spreadsheet export (Export to spreadsheet → Export HTML Text).
-      </p>
-
-      <div style={{ marginTop: 16 }}>
-        <input
-          type="file"
-          accept=".xls,.xlsx"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-        <button onClick={handleUpload} disabled={!file || loading} style={{ marginLeft: 12 }}>
-          {loading ? 'Importing...' : 'Upload'}
-        </button>
+    <div>
+      <div className="import-header">
+        <div><p className="eyebrow">Bring it in</p><h1 className="page-title">Import a template.</h1><p className="page-subtitle">Start with a Spectora HTML-text spreadsheet export. Hive will preserve your structure and flag anything that needs a second look.</p></div>
+        <Link className="button secondary" href="/templates">View library</Link>
       </div>
-
-      {errorMsg && (
-        <div
-          style={{
-            marginTop: 24,
-            padding: 16,
-            background: '#f8d7da',
-            border: '1px solid #f5c2c7',
-            borderRadius: 8,
-          }}
-        >
-          <strong>Import failed:</strong> {errorMsg}
-        </div>
-      )}
-
-      {result && (
-        <div style={{ marginTop: 24 }}>
-          <div
-            style={{
-              padding: 20,
-              background: '#f0f8f1',
-              border: '1px solid #c3e6cb',
-              borderRadius: 8,
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
-              ✓ Imported "{result.templateName}"
+      <div className="import-layout">
+        <div>
+          <section className="upload-panel panel">
+            <div className="upload-drop">
+              <div className="upload-icon">↥</div>
+              <strong>Choose your spreadsheet</strong>
+              <span className="muted" style={{ fontSize: 12, marginTop: 7 }}>XLS or XLSX · HTML Text export</span>
+              <input className="file-input" type="file" accept=".xls,.xlsx" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setErrorMsg(null); setResult(null) }} />
             </div>
-
-            <div style={{ display: 'flex', gap: 24, marginBottom: 12 }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{result.summary.sectionsFound}</div>
-                <div style={{ fontSize: 12, color: '#555' }}>Sections</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{result.summary.itemsFound}</div>
-                <div style={{ fontSize: 12, color: '#555' }}>Items</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{result.summary.commentsFound}</div>
-                <div style={{ fontSize: 12, color: '#555' }}>Comments</div>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: result.summary.issuesFound > 0 ? '#856404' : '#28a745',
-                  }}
-                >
-                  {result.summary.issuesFound}
-                </div>
-                <div style={{ fontSize: 12, color: '#555' }}>Flagged for review</div>
-              </div>
-            </div>
-
-            {result.summary.issuesFound === 0 ? (
-              <p style={{ fontSize: 13, color: '#155724', margin: '8px 0' }}>
-                Everything in this file was recognized and imported — nothing was skipped or flagged.
-              </p>
-            ) : (
-              <p style={{ fontSize: 13, color: '#856404', margin: '8px 0' }}>
-                Everything else imported cleanly. The items below need a quick look — nothing was
-                silently dropped, but these had content your importer couldn't fully map.
-              </p>
-            )}
-
-            <a
-              href={`/templates/${result.templateId}`}
-              style={{ display: 'inline-block', marginTop: 8, fontWeight: 600 }}
-            >
-              View imported template →
-            </a>
-          </div>
+            <div className="upload-footer"><span className="file-name">{file ? file.name : 'No file selected yet'}</span><button className="button" onClick={handleUpload} disabled={!file || loading}>{loading ? 'Importing...' : 'Import file  →'}</button></div>
+          </section>
+          {errorMsg && <div className="alert-error"><strong>Import couldn’t finish.</strong><br />{errorMsg}</div>}
+          {result && <section className="import-result">
+            <h2 className="result-title">Import complete: “{result.templateName}”</h2>
+            <div className="stats-grid"><div className="stat"><strong>{result.summary.sectionsFound}</strong><span>Sections</span></div><div className="stat"><strong>{result.summary.itemsFound}</strong><span>Items</span></div><div className="stat"><strong>{result.summary.commentsFound}</strong><span>Comments</span></div><div className="stat"><strong>{result.summary.issuesFound}</strong><span>Needs review</span></div></div>
+            <p className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>{result.summary.issuesFound === 0 ? 'Everything was recognized and imported cleanly.' : 'Your content is safe. A few rows were flagged so you can review them in context.'}</p>
+            <Link className="button small" href={`/templates/${result.templateId}`} style={{ marginTop: 15 }}>Open imported template  →</Link>
+          </section>}
         </div>
-      )}
+        <aside className="help-panel panel"><h3>Before you begin</h3><ol><li>Open your template in Spectora.</li><li>Choose Export to spreadsheet.</li><li>Select Export HTML Text.</li><li>Upload the downloaded file here.</li></ol><p className="muted" style={{ margin: '17px 0 0', fontSize: 10, lineHeight: 1.5 }}>Your sections, items, comments, and their order will stay connected.</p></aside>
+      </div>
     </div>
   )
 }
