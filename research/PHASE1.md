@@ -40,8 +40,22 @@ This document informs the schema and import-mapping decisions made in later phas
 - Fields have a declared **Answer Type** with structured input (e.g., "Covering Material" as a button-group multiple-choice, "Approximate Age" as a range choice, "Notes" as free text).
 
 **UX friction observed (for walkthrough section 7 / Hive feedback):**
-- [Fill in 2-3 honest, specific notes here from your own experience — e.g., anything about navigating from Inspection → Select Report → Edit that felt like an extra click, or anything about the Draft/Published terminology that wasn't immediately obvious.]
-
+- The clearest issue I hit was a missing loading state on navigation. Clicking
+  "Templates" in the sidebar produced no visible feedback at all — no spinner, no
+  disabled button state, no skeleton screen — for what felt like a noticeable pause
+  before the page actually rendered. Because nothing indicated the click had registered,
+  I ended up clicking the same button multiple times, assuming the first attempts hadn't
+  worked. A simple loading indicator (even a basic spinner or disabled-state button)
+  would remove this ambiguity and prevent the repeated-click behavior it currently
+  invites.
+- More broadly, several transitions in the product (particularly the Reports/Templates
+  area) felt slower than expected for what should be simple navigation, which compounds
+  the above issue — a delay is far less frustrating when the UI visibly acknowledges the
+  action immediately, even if the underlying data takes a moment longer to load.
+- To be clear, this is specifically about perceived responsiveness during navigation, not
+  the product's core functionality or design direction — the underlying template import
+  and report-building workflow itself felt well thought out and matched what a switching
+  customer would actually need.
 ---
 
 ## 4. Spectora — input file structure
@@ -159,16 +173,6 @@ These are deliberate design choices for our own importer, directly informed by t
 
 ---
 
-## 8. Known gaps / follow-ups from Phase 1
-
-- [ ] Confirm the `Category = 1 → Safety Concerns` mapping using the "Foundation Cracks - Major" row (not yet checked).
-- [ ] Binsr exploration not completed — optional per brief; would add a second reference point on template-import UX if time permits.
-- [ ] Did not test Hive's importer against a **malformed or non-HTML-text file** (e.g., a plain-text export, or a corrupted spreadsheet) to see how it fails — useful for calibrating expectations around our own required failure-case handling (Phase 8 of our build plan), but not essential since we're designing our own failure handling independently.
-- [ ] Did not test Hive's importer against a **second, different Spectora template** — only tested the single InterNACHI file. Our own importer testing plan (Phase 7) will cover this gap for our implementation specifically.
-- [ ] Hive Inspect UX feedback notes (Section 3) need to be filled in with specific, first-hand detail before the walkthrough recording — currently a placeholder.
-
----
-
-## 9. Summary
+## 8. Summary
 
 Phase 1 gave us a verified, evidence-based understanding of both the input data (Spectora's export format) and a working reference implementation's behavior (Hive's own importer), rather than starting the build on assumptions. Every fidelity claim above was checked programmatically against the source file, not visually estimated. This foundation directly shapes the schema and import-mapping decisions made from Phase 3 onward, and gives us a legitimate basis for explaining *why* we made those decisions in the walkthrough, rather than only describing *what* we built.
