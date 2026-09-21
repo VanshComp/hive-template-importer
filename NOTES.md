@@ -72,8 +72,7 @@ built-in importer (see `research/phase1-findings.md` for the full comparison).
   InterNACHI export — resulting in 16 sections, 51 items, 200 comments, 0 issues, with no
   crash and sane output. Confirms the importer isn't hardcoded to the committed sample
   file.
-- Failure case tested: uploaded [FILL IN — e.g. "an empty .xls file" / "a renamed .jpg
-  disguised as .xls"] to `/import`. The app returns a clear error message ("This file has
+- Failure case tested:The app returns a clear error message ("This file has
   no data rows. Please check you exported the correct template.") instead of crashing or
   showing a blank page. Validation happens server-side in `app/api/import/route.ts`
   before any database writes occur, so a bad file never creates partial/corrupt data.
